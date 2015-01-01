@@ -1,0 +1,282 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>  
+<title>Снежинка</title>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251" >
+</head>
+<body>
+
+<canvas width="850" height="430" id="mycanvas">
+  Ваш браузер не поддерживает canvas.
+</canvas>
+
+<script type="text/javascript">
+  var LX = 10, LY = 130;
+  var W = 400, H = W * Math.tan(Math.PI/12);
+  var K = W / 0.5;
+  var SX = 640, SY = 220;
+  var SR = 200;
+  var KS = SR / 0.5;
+  var r = 4;
+  var x = [], y = [];
+  var n = 27;
+
+  //снежинка по умолчанию
+  var tt = Math.tan(Math.PI/12);
+  x[0] = 0.03; y[0] = 0.03 * tt;
+  x[1] = 0.03; y[1] = -0.03 * tt;
+  x[2] = 0.08; y[2] = -0.08 * tt;
+  x[3] = 0.1; y[3] = -0.01;
+  x[4] = 0.11; y[4] = -0.11 * tt;
+  x[5] = 0.14; y[5] = -0.14 * tt;
+  x[6] = 0.18; y[6] = 0;
+  x[7] = 0.2; y[7] = -0.03;
+  x[8] = 0.28; y[8] = 0;
+  x[9] = 0.3; y[9] = -0.02;
+  x[10] = 0.35; y[10] = 0;
+  x[11] = 0.4; y[11] = -0.01;
+  x[12] = 0.43; y[12] = 0.06;
+  x[13] = 0.46; y[13] = 0.03;
+  x[14] = 0.5; y[14] = 0.5 * tt;
+  x[15] = 0.42; y[15] = 0.42 * tt;
+  x[16] = 0.38; y[16] = 0.06;
+  x[17] = 0.34; y[17] = 0.34 * tt;
+  x[18] = 0.31; y[18] = 0.31 * tt;
+  x[19] = 0.3; y[19] = 0.04;
+  x[20] = 0.27; y[20] = 0.27 * tt;
+  x[21] = 0.22; y[21] = 0.22 * tt;
+  x[22] = 0.2; y[22] = 0.02;
+  x[23] = 0.17; y[23] = 0.17 * tt;
+  x[24] = 0.15; y[24] = 0.15 * tt;
+  x[25] = 0.12; y[25] = 0.01;
+  x[26] = 0.08; y[26] = 0.08 * tt;
+  
+  function getScreenCoords(x, y) {
+    return {
+      x: parseInt(x * K) + LX,
+      y: parseInt(y * K) + LY
+    };
+  }
+
+  function getCoords(x, y) {
+    return {
+      x: (x - LX) / K,
+      y: (y - LY) / K
+    };
+  }
+
+  function snowTransform(x, y, alpha) {
+    var r = Math.sqrt(x*x + y*y);
+    var phi = Math.atan2(x, y);
+    if (alpha % 2 == 1)
+      phi = -phi;
+    phi += alpha * Math.PI / 6;
+    return {
+      x: r * Math.cos(phi),
+      y: r * Math.sin(phi)
+    };
+  }
+
+  function getScreenCoordsSnow(x, y) {
+    return {
+      x: parseInt(x * KS) + SX,
+      y: parseInt(y * KS) + SY
+    };
+  }
+
+  function drawCircle(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2 * Math.PI, true);
+    ctx.fillStyle = "gray";
+    ctx.fill();
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+  
+  function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+  }
+
+  function deletePoint(k) {
+    if (n <= 3)
+      return;
+    x.splice(k, 1);
+    y.splice(k, 1);
+    n--;
+  }
+
+  function insertPoint(k, x1, y1) {
+    x.splice(k + 1, 0, x1);
+    y.splice(k + 1, 0, y1);
+    n++;
+  }
+  
+  function onEdge(x, y) {
+    var eps = 1e-3;
+    return Math.abs(y - x * tt) < eps || Math.abs(y + x * tt) < eps;
+  }
+
+  function repaint(ctx) {
+    //очищаем область
+    ctx.clearRect(LX - r - 4, LY - H - r - 4, W + 2 * r + 8, 2 * H + 2 * r + 8);
+
+    //рисуем треугольник
+    ctx.beginPath();
+    ctx.moveTo(LX, LY);
+    ctx.lineTo(LX + W, LY + H);
+    ctx.lineTo(LX + W, LY - H);
+    ctx.closePath();
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
+
+    //рисуем линии
+    ctx.beginPath();
+    for (var i = 0; i < n; i++) {
+      var c = getScreenCoords(x[i], y[i]);
+      if (i == 0)
+        ctx.moveTo(c.x, c.y);
+      else
+        ctx.lineTo(c.x, c.y);      
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgb(137, 142, 166)";
+    ctx.fillStyle = "rgb(204, 211, 247)"; 
+    ctx.fill();
+    ctx.stroke();
+
+    for (var i = 0; i < n; i++) {
+      var c = getScreenCoords(x[i], y[i]);
+      drawCircle(ctx, c.x, c.y, r);      
+    }
+
+    //очищаем снежинку
+    ctx.clearRect(SX - SR - 4, SY - SR - 4, 2 * SR + 8, 2 * SR + 8);
+
+    //рисуем снежинку
+    for (var alpha = 0; alpha < 12; alpha++) {
+      ctx.beginPath();
+      for (var i = 0; i < n; i++) {
+        var s = snowTransform(x[i], y[i], alpha);
+        var c = getScreenCoordsSnow(s.x, s.y);
+        if (i == 0)
+          ctx.moveTo(c.x, c.y);
+        else
+          ctx.lineTo(c.x, c.y);
+      }    
+      ctx.closePath();
+      ctx.fillStyle = "rgb(204, 211, 247)"; 
+      ctx.fill();
+    }
+    
+    //рисуем контур снежинки
+    for (var alpha = 0; alpha < 12; alpha++) {
+      for (var i = 0; i < n; i++) {
+        var j = (i == n - 1  ?  0  :  i + 1);
+        var si = snowTransform(x[i], y[i], alpha);
+        var ci = getScreenCoordsSnow(si.x, si.y);
+        var sj = snowTransform(x[j], y[j], alpha);
+        var cj = getScreenCoordsSnow(sj.x, sj.y);
+        ctx.beginPath();
+        ctx.moveTo(ci.x, ci.y);
+        ctx.lineTo(cj.x, cj.y);
+        if (onEdge(x[i], y[i]) && onEdge(x[j], y[j]) && y[i] * y[j] > 0) //точки на одном ребре
+          ctx.strokeStyle = "rgb(204, 211, 247)";            
+        else
+          ctx.strokeStyle = "rgb(137, 142, 166)";
+        ctx.stroke();
+      }    
+    } 
+
+  } // function repaint
+  
+  var point = -1;
+  var dx, dy;
+  var canvas = document.getElementById('mycanvas');
+  if (canvas.getContext) {
+    var ctx = canvas.getContext('2d');
+
+    repaint(ctx);
+    
+    canvas.onmousedown = function(evt) {
+      var mousePos = getMousePos(canvas, evt);
+      for (var i = 0; i < n; i++) {
+        var c = getScreenCoords(x[i], y[i]);
+        if (Math.pow(mousePos.x - c.x, 2) + Math.pow(mousePos.y - c.y, 2) <= r*r) {
+          point = i;
+          dx = mousePos.x - c.x;
+          dy = mousePos.y - c.y;
+          break;
+        }
+      }
+    }
+
+    canvas.onmousemove = function(evt) {
+      if (point == -1)
+        return;
+      var mousePos = getMousePos(canvas, evt);
+      var sx = mousePos.x - dx, sy = mousePos.y - dy;
+      var c = getCoords(sx, sy);
+      if (c.x > 0.5)
+        c.x = 0.5;
+      if (c.x < 0)
+        c.x = 0;
+      var kk = Math.tan(Math.PI/12);
+      if (c.y > c.x * kk)
+        c.y = c.x * kk;
+      if (c.y < -c.x * kk)
+        c.y = -c.x * kk;
+      x[point] = c.x; y[point] = c.y;
+      repaint(ctx);
+    }    
+
+    canvas.ondblclick = function(evt) {
+      var mousePos = getMousePos(canvas, evt);      
+      //проверяем, нужно ли удалить точку
+      for (var i = 0; i < n; i++) {
+        var c = getScreenCoords(x[i], y[i]);
+        if (Math.pow(mousePos.x - c.x, 2) + Math.pow(mousePos.y - c.y, 2) <= r*r) {
+          deletePoint(i);
+          repaint(ctx);
+          return;
+        }
+      }
+      //проверяем, нужно ли добавить точку
+      var eps_pixels = 3;
+      var eps = eps_pixels / K;
+      var c = getCoords(mousePos.x, mousePos.y);
+      for (var i = 0; i < n; i++) {
+        var j = (i == n - 1  ?  0  :  i + 1);
+        if (c.x >= x[i] && c.x <= x[j] || c.x >= x[j] && c.x <= x[i]) {
+          if (x[i] != x[j]) {
+            var y0 = y[j] + (y[i] - y[j]) / (x[i] - x[j]) * (c.x - x[j]);
+            if (Math.abs(y0 - c.y) < eps) {
+              insertPoint(i, c.x, c.y);
+              repaint(ctx);
+              return;
+            }
+          }
+        }
+      } 
+    }
+
+    canvas.onmouseup = function(evt) {
+      point = -1;
+    }
+
+  }
+</script>
+
+<p>
+Точки можно перемещать мышкой. Двойной клик на точке убирает её, двойной клик на линии добавляет точку.
+</p>
+<p>
+<a href="http://vk.com/mathmachine" target="_blank"><img src="http://group22x.narod.ru/grenkin/banner.png" width="300"></a>
+</p>                                                                                    
+
+
+</body>
+</html>
